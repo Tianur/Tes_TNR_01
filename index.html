@@ -1,101 +1,319 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Data Sensor Node</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Greenhouse SMKN 8 Pekanbaru</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f2f5;
-      padding: 20px;
+      margin: 0;
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom right, #f2fbfc, #fff7fa);
+      color: #333;
+      line-height: 1.6;
     }
-    .container {
-      max-width: 1000px;
-      margin: auto;
-      background: white;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    header {
+      text-align: center;
+      background: linear-gradient(135deg, #00bfa5, #81c784);
+      color: white;
+      padding: 1.5rem;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
     }
-    .node-card {
-      margin-bottom: 20px;
-      padding: 15px;
-      border-radius: 8px;
-      background-color: #e3f2fd;
-      border-left: 5px solid #2196F3;
+    header h1 {
+      font-size: 2rem;
+      margin: 0;
+      letter-spacing: 0.5px;
     }
-    h2 {
-      margin-top: 0;
+    header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      margin-top: 0.3rem;
     }
-    table {
+    .content {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    .card {
+      background: #ffffffb0;
+      border-radius: 16px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      backdrop-filter: blur(6px);
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    }
+    .card-title {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: #00796b;
+      margin-bottom: 1.2rem;
+    }
+    .gauge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+      justify-items: center;
+    }
+    .gauge-item {
+      background: #fafafa;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       width: 100%;
-      border-collapse: collapse;
+      transition: 0.3s;
     }
-    th, td {
-      padding: 8px;
-      border: 1px solid #ccc;
+    .gauge-item:hover {
+      background: #f5fdfd;
+      transform: scale(1.02);
+    }
+    .gauge-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #004d40;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .gauge-title i {
+      color: #00796b;
+      font-size: 1.2rem;
+    }
+    canvas {
+      max-width: 100%;
+      height: auto;
+    }
+    .pump-status {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-top: 1rem;
+      background: #e0f2f1;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      display: inline-block;
+      min-width: 90px;
+    }
+    .pump-status.on {
+      background-color: #c8e6c9;
+      color: #2e7d32;
+      box-shadow: 0 0 10px #81c784;
+    }
+    .pump-status.off {
+      background-color: #ffcdd2;
+      color: #c62828;
+      box-shadow: 0 0 10px #ef9a9a;
+    }
+    footer {
+      text-align: center;
+      padding: 1rem;
+      background: #004d40;
+      color: white;
+      margin-top: 2rem;
+      font-size: 0.9rem;
+      letter-spacing: 0.3px;
+    }
+    .chart-card {
+      background: #ffffffb0;
+      border-radius: 16px;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .chart-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #00796b;
+      margin-bottom: 1rem;
       text-align: center;
     }
-    th {
-      background-color: #bbdefb;
+    @media (max-width: 768px) {
+      header h1 { font-size: 1.5rem; }
+      .card-title { font-size: 1.3rem; }
+      .gauge-title { font-size: 1rem; }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-gauges@2.1.7/gauge.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>Data Sensor dari Google Sheets</h1>
-    <div id="data-container">
-      <p>Memuat data...</p>
+  <header>
+    <h1><i class="fa-solid fa-seedling"></i> Dashboard Greenhouse SMKN 8 Pekanbaru</h1>
+    <p>Monitoring Suhu, Kelembaban, Tekanan, Cahaya, Tanah, dan Status Pompa</p>
+  </header>
+
+  <div class="content">
+    <div id="node-container"></div>
+    <div class="chart-card">
+      <p class="chart-title"><i class="fa-solid fa-chart-line"></i> Grafik Perbandingan Sensor</p>
+      <canvas id="chart-temperature"></canvas>
     </div>
   </div>
 
-  <script>
-    const sheetId = '1M5ZpNznzEYGM0CnCxf3WTAYjaCkQiGA_TD-reMynzU8';
-    const nodes = ['node1', 'node2', 'node3', 'node4'];
+  <footer>
+    <p>&copy; 2025 SMKN 8 Pekanbaru | Smart Greenhouse System 🌿</p>
+  </footer>
 
-    async function loadSheetData(sheetName) {
+  <script>
+    const nodeContainer = document.getElementById('node-container');
+    const nodes = [1, 2, 3, 4];
+    const icons = {
+      temperature: 'fa-temperature-half',
+      humidity: 'fa-droplet',
+      pressure: 'fa-wind',
+      light: 'fa-sun',
+      soil: 'fa-seedling',
+      pump: 'fa-faucet'
+    };
+
+    // === Membuat tampilan node ===
+    nodes.forEach(node => {
+      nodeContainer.innerHTML += `
+        <div class="card" id="node-${node}">
+          <p class="card-title">🌱 Node ${node}</p>
+          <div class="gauge-grid">
+            <div class="gauge-item"><p class="gauge-title"><i class="fa-solid ${icons.temperature}"></i> Suhu (°C)</p><canvas id="gauge-temperature-${node}"></canvas></div>
+            <div class="gauge-item"><p class="gauge-title"><i class="fa-solid ${icons.humidity}"></i> Kelembaban Udara (%)</p><canvas id="gauge-humidity-${node}"></canvas></div>
+            <div class="gauge-item"><p class="gauge-title"><i class="fa-solid ${icons.pressure}"></i> Tekanan Udara (hPa)</p><canvas id="gauge-pressure-${node}"></canvas></div>
+            <div class="gauge-item"><p class="gauge-title"><i class="fa-solid ${icons.light}"></i> Cahaya (Lux)</p><canvas id="gauge-light-${node}"></canvas></div>
+            <div class="gauge-item"><p class="gauge-title"><i class="fa-solid ${icons.soil}"></i> Kelembaban Tanah (%)</p><canvas id="gauge-soil-${node}"></canvas></div>
+            <div class="gauge-item"><p class="gauge-title"><i class="fa-solid ${icons.pump}"></i> Status Pompa</p><div id="pump-status-${node}" class="pump-status off">OFF</div></div>
+          </div>
+        </div>`;
+    });
+
+    // === Pengaturan Gauge ===
+    const gauges = { temperature: [], humidity: [], pressure: [], light: [], soil: [] };
+
+    nodes.forEach(node => {
+      gauges.temperature[node] = new RadialGauge({
+        renderTo: `gauge-temperature-${node}`,
+        width: 200, height: 200,
+        minValue: 0, maxValue: 50,
+        majorTicks: ["0","10","20","30","40","50"],
+        highlights: [
+          { from: 0, to: 20, color: "#ffcc80" },
+          { from: 20, to: 30, color: "#81c784" },
+          { from: 30, to: 40, color: "#fff176" },
+          { from: 40, to: 50, color: "#e57373" }
+        ],
+        colorNeedle: "#00796b",
+        colorPlate: "#f9f9f9",
+        valueBox: true, fontNumbersSize: 28
+      }).draw();
+
+      gauges.humidity[node] = new RadialGauge({
+        renderTo: `gauge-humidity-${node}`,
+        width: 200, height: 200,
+        minValue: 0, maxValue: 100,
+        highlights: [
+          { from: 0, to: 30, color: "#ffcc80" },
+          { from: 30, to: 70, color: "#81c784" },
+          { from: 70, to: 85, color: "#64b5f6" },
+          { from: 85, to: 100, color: "#ef5350" }
+        ],
+        colorNeedle: "#0288d1",
+        colorPlate: "#f9f9f9",
+        valueBox: true, fontNumbersSize: 28
+      }).draw();
+
+      gauges.pressure[node] = new RadialGauge({
+        renderTo: `gauge-pressure-${node}`,
+        width: 200, height: 200,
+        minValue: 950, maxValue: 1050,
+        highlights: [
+          { from: 950, to: 990, color: "#ffb74d" },
+          { from: 990, to: 1020, color: "#81c784" },
+          { from: 1020, to: 1040, color: "#fff176" },
+          { from: 1040, to: 1050, color: "#ef5350" }
+        ],
+        colorNeedle: "#455a64",
+        colorPlate: "#f9f9f9",
+        valueBox: true, fontNumbersSize: 28
+      }).draw();
+
+      gauges.light[node] = new RadialGauge({
+        renderTo: `gauge-light-${node}`,
+        width: 200, height: 200,
+        minValue: 0, maxValue: 10000,
+        highlights: [
+          { from: 0, to: 2000, color: "#90a4ae" },
+          { from: 2000, to: 3000, color: "#fff59d" },
+          { from: 3000, to: 7000, color: "#81c784" },
+          { from: 7000, to: 9000, color: "#ffd54f" },
+          { from: 9000, to: 10000, color: "#e57373" }
+        ],
+        colorNeedle: "#fbc02d",
+        colorPlate: "#f9f9f9",
+        valueBox: true, fontNumbersSize: 28
+      }).draw();
+
+      gauges.soil[node] = new RadialGauge({
+        renderTo: `gauge-soil-${node}`,
+        width: 200, height: 200,
+        minValue: 0, maxValue: 100,
+        highlights: [
+          { from: 0, to: 30, color: "#ffcc80" },
+          { from: 30, to: 70, color: "#81c784" },
+          { from: 70, to: 85, color: "#64b5f6" },
+          { from: 85, to: 100, color: "#ef5350" }
+        ],
+        colorNeedle: "#6d4c41",
+        colorPlate: "#f9f9f9",
+        valueBox: true, fontNumbersSize: 28
+      }).draw();
+    });
+
+    // === Fungsi untuk membaca data dari Google Sheets ===
+    async function fetchSheetData(sheetName) {
+      const sheetId = '1M5ZpNznzEYGM0CnCxf3WTAYjaCkQiGA_TD-reMynzU8';
       const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;
       const response = await fetch(url);
       const text = await response.text();
       const lines = text.split('\n');
+      if (lines.length < 4) return [];
       const dataRow = lines[3]; // Baris ke-4 (indeks 3)
-      const values = dataRow.split(',');
-      // Ambil kolom K (indeks 10) hingga S (indeks 18)
-      return values.slice(10, 19);
+      return dataRow.split(',').slice(10, 19); // Kolom K (10) hingga S (18)
     }
 
-    async function displayData() {
-      const container = document.getElementById('data-container');
-      container.innerHTML = '';
-
+    // === Fungsi untuk memperbarui semua gauge dari data sheet ===
+    async function updateGauges() {
       for (const node of nodes) {
-        const data = await loadSheetData(node);
-        const nodeDiv = document.createElement('div');
-        nodeDiv.className = 'node-card';
-        nodeDiv.innerHTML = `
-          <h2>${node}</h2>
-          <table>
-            <tr>
-              <th>K</th><th>L</th><th>M</th><th>N</th><th>O</th><th>P</th><th>Q</th><th>R</th><th>S</th>
-            </tr>
-            <tr>
-              <td>${data[0] || ''}</td>
-              <td>${data[1] || ''}</td>
-              <td>${data[2] || ''}</td>
-              <td>${data[3] || ''}</td>
-              <td>${data[4] || ''}</td>
-              <td>${data[5] || ''}</td>
-              <td>${data[6] || ''}</td>
-              <td>${data[7] || ''}</td>
-              <td>${data[8] || ''}</td>
-            </tr>
-          </table>
-        `;
-        container.appendChild(nodeDiv);
+        const data = await fetchSheetData(`node${node}`);
+        if (!data || data.length < 6) continue;
+
+        // Kita asumsikan data urut: suhu, kelembaban, tekanan, cahaya, tanah, pompa
+        const temp = parseFloat(data[0]) || 0;
+        const hum = parseFloat(data[1]) || 0;
+        const pres = parseFloat(data[2]) || 0;
+        const light = parseFloat(data[3]) || 0;
+        const soil = parseFloat(data[4]) || 0;
+        const pump = parseInt(data[5]) ? 'ON' : 'OFF';
+
+        gauges.temperature[node].value = temp;
+        gauges.humidity[node].value = hum;
+        gauges.pressure[node].value = pres;
+        gauges.light[node].value = light;
+        gauges.soil[node].value = soil;
+
+        const pumpEl = document.getElementById(`pump-status-${node}`);
+        pumpEl.textContent = pump;
+        pumpEl.className = `pump-status ${pump.toLowerCase()}`;
       }
     }
 
-    displayData();
+    // Panggil update pertama kali
+    updateGauges();
+
+    // Update data setiap 10 detik
+    setInterval(updateGauges, 10000);
   </script>
 </body>
 </html>
