@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Data Sensor Node</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .node-card {
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      background-color: #e3f2fd;
+      border-left: 5px solid #2196F3;
+    }
+    h2 {
+      margin-top: 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    th {
+      background-color: #bbdefb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Data Sensor dari Google Sheets</h1>
+    <div id="data-container">
+      <p>Memuat data...</p>
+    </div>
+  </div>
+
+  <script>
+    const sheetId = '1M5ZpNznzEYGM0CnCxf3WTAYjaCkQiGA_TD-reMynzU8';
+    const nodes = ['node1', 'node2', 'node3', 'node4'];
+
+    async function loadSheetData(sheetName) {
+      const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;
+      const response = await fetch(url);
+      const text = await response.text();
+      const lines = text.split('\n');
+      const dataRow = lines[3]; // Baris ke-4 (indeks 3)
+      const values = dataRow.split(',');
+      // Ambil kolom K (indeks 10) hingga S (indeks 18)
+      return values.slice(10, 19);
+    }
+
+    async function displayData() {
+      const container = document.getElementById('data-container');
+      container.innerHTML = '';
+
+      for (const node of nodes) {
+        const data = await loadSheetData(node);
+        const nodeDiv = document.createElement('div');
+        nodeDiv.className = 'node-card';
+        nodeDiv.innerHTML = `
+          <h2>${node}</h2>
+          <table>
+            <tr>
+              <th>K</th><th>L</th><th>M</th><th>N</th><th>O</th><th>P</th><th>Q</th><th>R</th><th>S</th>
+            </tr>
+            <tr>
+              <td>${data[0] || ''}</td>
+              <td>${data[1] || ''}</td>
+              <td>${data[2] || ''}</td>
+              <td>${data[3] || ''}</td>
+              <td>${data[4] || ''}</td>
+              <td>${data[5] || ''}</td>
+              <td>${data[6] || ''}</td>
+              <td>${data[7] || ''}</td>
+              <td>${data[8] || ''}</td>
+            </tr>
+          </table>
+        `;
+        container.appendChild(nodeDiv);
+      }
+    }
+
+    displayData();
+  </script>
+</body>
+</html>
