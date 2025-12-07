@@ -162,8 +162,9 @@
   </footer>
 
   <script>
-    const nodeContainer = document.getElementById('node-container');
-    const nodes = [1, 2, 3, 4];
+    const sheetId = '1M5ZpNznzEYGM0CnCxf3WTAYjaCkQiGA_TD-reMynzU8';
+    const nodes = ['node1', 'node2', 'node3', 'node4'];
+    const nodeNumbers = [1, 2, 3, 4];
     const icons = {
       temperature: 'fa-temperature-half',
       humidity: 'fa-droplet',
@@ -174,25 +175,44 @@
     };
 
     // === Membuat tampilan node ===
-    nodes.forEach(node => {
-      nodeContainer.innerHTML += `
+    nodeNumbers.forEach(node => {
+      document.getElementById('node-container').innerHTML += `
         <div class="card" id="node-${node}">
           <p class="card-title">🌱 Node ${node}</p>
           <div class="gauge-grid">
-            <div class="gauge-item"><p class="gauge-title"><i class="fa-solid ${icons.temperature}"></i> Suhu (°C)</p><canvas id="gauge-temperature-${node}"></canvas></div>
-            <div class="gauge-item"><p class="gauge-title"><i class="fa-solid ${icons.humidity}"></i> Kelembaban Udara (%)</p><canvas id="gauge-humidity-${node}"></canvas></div>
-            <div class="gauge-item"><p class="gauge-title"><i class="fa-solid ${icons.pressure}"></i> Tekanan Udara (hPa)</p><canvas id="gauge-pressure-${node}"></canvas></div>
-            <div class="gauge-item"><p class="gauge-title"><i class="fa-solid ${icons.light}"></i> Cahaya (Lux)</p><canvas id="gauge-light-${node}"></canvas></div>
-            <div class="gauge-item"><p class="gauge-title"><i class="fa-solid ${icons.soil}"></i> Kelembaban Tanah (%)</p><canvas id="gauge-soil-${node}"></canvas></div>
-            <div class="gauge-item"><p class="gauge-title"><i class="fa-solid ${icons.pump}"></i> Status Pompa</p><div id="pump-status-${node}" class="pump-status off">OFF</div></div>
+            <div class="gauge-item">
+              <p class="gauge-title"><i class="fa-solid ${icons.temperature}"></i> Suhu (°C)</p>
+              <canvas id="gauge-temperature-${node}"></canvas>
+            </div>
+            <div class="gauge-item">
+              <p class="gauge-title"><i class="fa-solid ${icons.humidity}"></i> Kelembaban Udara (%)</p>
+              <canvas id="gauge-humidity-${node}"></canvas>
+            </div>
+            <div class="gauge-item">
+              <p class="gauge-title"><i class="fa-solid ${icons.pressure}"></i> Tekanan Udara (hPa)</p>
+              <canvas id="gauge-pressure-${node}"></canvas>
+            </div>
+            <div class="gauge-item">
+              <p class="gauge-title"><i class="fa-solid ${icons.light}"></i> Cahaya (Lux)</p>
+              <canvas id="gauge-light-${node}"></canvas>
+            </div>
+            <div class="gauge-item">
+              <p class="gauge-title"><i class="fa-solid ${icons.soil}"></i> Kelembaban Tanah (%)</p>
+              <canvas id="gauge-soil-${node}"></canvas>
+            </div>
+            <div class="gauge-item">
+              <p class="gauge-title"><i class="fa-solid ${icons.pump}"></i> Status Pompa</p>
+              <div id="pump-status-${node}" class="pump-status off">OFF</div>
+            </div>
           </div>
         </div>`;
     });
 
-    // === Pengaturan Gauge ===
+    // === Inisialisasi Gauge ===
     const gauges = { temperature: [], humidity: [], pressure: [], light: [], soil: [] };
 
-    nodes.forEach(node => {
+    nodeNumbers.forEach(node => {
+      // SUHU
       gauges.temperature[node] = new RadialGauge({
         renderTo: `gauge-temperature-${node}`,
         width: 200, height: 200,
@@ -209,6 +229,7 @@
         valueBox: true, fontNumbersSize: 28
       }).draw();
 
+      // KELEMBABAN
       gauges.humidity[node] = new RadialGauge({
         renderTo: `gauge-humidity-${node}`,
         width: 200, height: 200,
@@ -224,6 +245,7 @@
         valueBox: true, fontNumbersSize: 28
       }).draw();
 
+      // TEKANAN
       gauges.pressure[node] = new RadialGauge({
         renderTo: `gauge-pressure-${node}`,
         width: 200, height: 200,
@@ -239,6 +261,7 @@
         valueBox: true, fontNumbersSize: 28
       }).draw();
 
+      // CAHAYA
       gauges.light[node] = new RadialGauge({
         renderTo: `gauge-light-${node}`,
         width: 200, height: 200,
@@ -255,6 +278,7 @@
         valueBox: true, fontNumbersSize: 28
       }).draw();
 
+      // KELEMBABAN TANAH
       gauges.soil[node] = new RadialGauge({
         renderTo: `gauge-soil-${node}`,
         width: 200, height: 200,
@@ -272,48 +296,56 @@
     });
 
     // === Fungsi untuk membaca data dari Google Sheets ===
-    async function fetchSheetData(sheetName) {
-      const sheetId = '1M5ZpNznzEYGM0CnCxf3WTAYjaCkQiGA_TD-reMynzU8';
+    async function loadSheetData(sheetName) {
       const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;
       const response = await fetch(url);
       const text = await response.text();
       const lines = text.split('\n');
-      if (lines.length < 4) return [];
-      const dataRow = lines[3]; // Baris ke-4 (indeks 3)
-      return dataRow.split(',').slice(10, 19); // Kolom K (10) hingga S (18)
+      const dataRow = lines[3]; // Baris ke-4
+      const values = dataRow.split(',');
+      // Kolom K4-S4 (indeks 10-18)
+      return values.slice(10, 19).map(v => v.trim());
     }
 
-    // === Fungsi untuk memperbarui semua gauge dari data sheet ===
-    async function updateGauges() {
-      for (const node of nodes) {
-        const data = await fetchSheetData(`node${node}`);
-        if (!data || data.length < 6) continue;
+    // === Fungsi untuk memperbarui tampilan ===
+    async function updateDisplay() {
+      for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+        const nodeNum = nodeNumbers[i];
+        try {
+          const data = await loadSheetData(node);
+          // Urutan: Tanggal, Waktu, Status Pembacaan, Temperature, Humadity, Tekanan Udara, Intensitas Cahaya, Kelembaban Tanah, Status Pompa
+          // Indeks:   [0]      [1]     [2]               [3]          [4]         [5]              [6]                 [7]              [8]
+          const tanggal = data[0];
+          const waktu = data[1];
+          const status = data[2];
+          const temp = parseFloat(data[3]);
+          const hum = parseFloat(data[4]);
+          const press = parseFloat(data[5]);
+          const light = parseFloat(data[6]);
+          const soil = parseFloat(data[7]);
+          const pump = data[8];
 
-        // Kita asumsikan data urut: suhu, kelembaban, tekanan, cahaya, tanah, pompa
-        const temp = parseFloat(data[0]) || 0;
-        const hum = parseFloat(data[1]) || 0;
-        const pres = parseFloat(data[2]) || 0;
-        const light = parseFloat(data[3]) || 0;
-        const soil = parseFloat(data[4]) || 0;
-        const pump = parseInt(data[5]) ? 'ON' : 'OFF';
+          if (!isNaN(temp)) gauges.temperature[nodeNum].value = temp;
+          if (!isNaN(hum)) gauges.humidity[nodeNum].value = hum;
+          if (!isNaN(press)) gauges.pressure[nodeNum].value = press;
+          if (!isNaN(light)) gauges.light[nodeNum].value = light;
+          if (!isNaN(soil)) gauges.soil[nodeNum].value = soil;
 
-        gauges.temperature[node].value = temp;
-        gauges.humidity[node].value = hum;
-        gauges.pressure[node].value = pres;
-        gauges.light[node].value = light;
-        gauges.soil[node].value = soil;
-
-        const pumpEl = document.getElementById(`pump-status-${node}`);
-        pumpEl.textContent = pump;
-        pumpEl.className = `pump-status ${pump.toLowerCase()}`;
+          const pumpEl = document.getElementById(`pump-status-${nodeNum}`);
+          if (pumpEl) {
+            pumpEl.textContent = pump;
+            pumpEl.className = `pump-status ${pump.toLowerCase()}`;
+          }
+        } catch (e) {
+          console.error(`Gagal memuat data dari ${node}:`, e);
+        }
       }
     }
 
-    // Panggil update pertama kali
-    updateGauges();
-
-    // Update data setiap 10 detik
-    setInterval(updateGauges, 10000);
+    // === Update data setiap 10 detik ===
+    setInterval(updateDisplay, 10000);
+    updateDisplay(); // Panggil pertama kali
   </script>
 </body>
 </html>
