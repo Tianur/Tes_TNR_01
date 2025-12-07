@@ -162,7 +162,9 @@
   </footer>
 
   <script>
-    const sheetId = '1M5ZpNznzEYGM0CnCxf3WTAYjaCkQiGA_TD-reMynzU8';
+    // === GANTI DENGAN URL WEB APP ANDA ===
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbw8XhPbZXB5tvjoFNp2FTi4H9p08i86Ds8WA8AO1tSKr5IzGbW8KbpSrX2YkfCGE3Vwng/exec';
+
     const nodes = ['node1', 'node2', 'node3', 'node4'];
     const nodeNumbers = [1, 2, 3, 4];
     const icons = {
@@ -295,16 +297,13 @@
       }).draw();
     });
 
-    // === Fungsi untuk membaca data dari Google Sheets ===
+    // === Fungsi untuk membaca data dari Google Apps Script ===
     async function loadSheetData(sheetName) {
-      const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;
+      const url = `${GAS_URL}?sts=read&sheet=${sheetName}`;
       const response = await fetch(url);
       const text = await response.text();
-      const lines = text.split('\n');
-      const dataRow = lines[3]; // Baris ke-4
-      const values = dataRow.split(',');
-      // Kolom K4-S4 (indeks 10-18)
-      return values.slice(10, 19).map(v => v.trim());
+      const data = text.split(',');
+      return data.map(item => item.trim());
     }
 
     // === Fungsi untuk memperbarui tampilan ===
